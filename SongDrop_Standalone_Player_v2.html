@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SongDrop — Lamb Music Works</title>
+<style>
+  :root{
+    --bg:#0a0e1a;
+    --bg2:#0f1424;
+    --panel:#131a2e;
+    --panel2:#171f38;
+    --line:#262f4a;
+    --gold:#e8b84b;
+    --gold-dim:#b8923a;
+    --text:#f4f6fb;        /* primary text — high contrast, never faded */
+    --text-soft:#c7cce0;   /* secondary text — still clearly readable */
+    --muted:#8a91b3;       /* tertiary/meta only — never body copy */
+    --success:#5fd98a;
+    --error:#ef6f6f;
+    --radius:14px;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0;}
+
+  body{
+    background:radial-gradient(ellipse at top, var(--bg2) 0%, var(--bg) 60%);
+    color:var(--text);
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  @font-face{
+    font-family:'Bebas Neue';
+    src:local('Bebas Neue');
+  }
+
+  .display{
+    font-family:'Bebas Neue','Arial Narrow',sans-serif;
+    letter-spacing:1.5px;
+  }
+
+  /* ───────── Screen wrapper ───────── */
+  .screen{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  .hidden{display:none !important;}
+
+  /* ───────── Lock screen ───────── */
+  .lock-card{
+    width:100%;
+    max-width:420px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:40px 32px;
+    box-shadow:0 20px 60px rgba(0,0,0,0.5);
+  }
+  .lock-brand{
+    text-align:center;
+    margin-bottom:8px;
+  }
+  .lock-brand .mark{
+    font-size:13px;
+    letter-spacing:3px;
+    color:var(--gold);
+    font-weight:600;
+  }
+  .lock-brand h1{
+    font-family:'Bebas Neue','Arial Narrow',sans-serif;
+    font-size:42px;
+    letter-spacing:2px;
+    color:var(--text);
+    margin-top:4px;
+  }
+  .lock-sub{
+    text-align:center;
+    color:var(--text-soft);
+    font-size:14px;
+    margin-bottom:32px;
+    line-height:1.5;
+  }
+  .field{
+    margin-bottom:16px;
+  }
+  .field label{
+    display:block;
+    font-size:12px;
+    font-weight:600;
+    letter-spacing:0.5px;
+    color:var(--text-soft);
+    margin-bottom:6px;
+    text-transform:uppercase;
+  }
+  .field input{
+    width:100%;
+    padding:13px 14px;
+    background:var(--bg2);
+    border:1px solid var(--line);
+    border-radius:9px;
+    color:var(--text);
+    font-size:15px;
+    font-family:inherit;
+    transition:border-color 0.15s;
+  }
+  .field input::placeholder{color:var(--muted);}
+  .field input:focus{
+    outline:none;
+    border-color:var(--gold-dim);
+  }
+  .field input.invalid{border-color:var(--error);}
+
+  .unlock-btn{
+    width:100%;
+    padding:15px;
+    background:var(--gold);
+    color:#1a1206;
+    border:none;
+    border-radius:9px;
+    font-size:15px;
+    font-weight:700;
+    letter-spacing:0.5px;
+    cursor:pointer;
+    margin-top:8px;
+    transition:filter 0.15s, transform 0.1s;
+  }
+  .unlock-btn:hover{filter:brightness(1.08);}
+  .unlock-btn:active{transform:scale(0.98);}
+  .unlock-btn:disabled{opacity:0.6;cursor:wait;}
+
+  .lock-error{
+    color:var(--error);
+    font-size:13px;
+    text-align:center;
+    margin-top:14px;
+    min-height:18px;
+    line-height:1.5;
+  }
+
+  .lock-footer{
+    text-align:center;
+    color:var(--muted);
+    font-size:11px;
+    margin-top:28px;
+    line-height:1.6;
+    border-top:1px solid var(--line);
+    padding-top:18px;
+  }
+
+  /* ───────── Player screen ───────── */
+  .player-wrap{
+    width:100%;
+    max-width:480px;
+  }
+  .topbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:24px;
+    padding:0 4px;
+  }
+  .topbar .greet{
+    font-size:13px;
+    color:var(--text-soft);
+  }
+  .topbar .greet strong{color:var(--text);}
+  .lock-out-btn{
+    background:none;
+    border:1px solid var(--line);
+    color:var(--text-soft);
+    font-size:12px;
+    padding:7px 12px;
+    border-radius:7px;
+    cursor:pointer;
+  }
+  .lock-out-btn:hover{border-color:var(--gold-dim);color:var(--text);}
+
+  .now-playing-card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:28px 24px;
+    text-align:center;
+    margin-bottom:20px;
+    position:relative;
+    overflow:hidden;
+  }
+  .now-playing-card::before{
+    content:'';
+    position:absolute;
+    top:-60%;left:-20%;
+    width:140%;height:160%;
+    background:radial-gradient(circle, rgba(232,184,75,0.12) 0%, transparent 60%);
+    pointer-events:none;
+  }
+  .art-wrap{
+    width:200px;height:200px;
+    margin:0 auto 22px;
+    border-radius:16px;
+    background:linear-gradient(135deg, #1c2440, #0d1224);
+    display:flex;align-items:center;justify-content:center;
+    border:1px solid var(--line);
+    position:relative;
+    box-shadow:0 14px 40px rgba(0,0,0,0.45);
+  }
+  .art-wrap .note-icon{
+    font-size:64px;
+    opacity:0.85;
+  }
+  .track-title{
+    font-size:21px;
+    font-weight:700;
+    color:var(--text);
+    margin-bottom:4px;
+  }
+  .track-artist{
+    font-size:14px;
+    color:var(--text-soft);
+    margin-bottom:20px;
+  }
+
+  .progress-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:18px;
+  }
+  .time-label{
+    font-size:11px;
+    color:var(--text-soft);
+    min-width:34px;
+  }
+  .progress-track{
+    flex:1;
+    height:5px;
+    background:var(--line);
+    border-radius:4px;
+    cursor:pointer;
+    position:relative;
+  }
+  .progress-fill{
+    height:100%;
+    background:var(--gold);
+    border-radius:4px;
+    width:0%;
+    transition:width 0.1s linear;
+  }
+
+  .controls-row{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:22px;
+  }
+  .ctrl-btn{
+    background:none;
+    border:none;
+    color:var(--text);
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:transform 0.1s, color 0.15s;
+  }
+  .ctrl-btn:hover{color:var(--gold);}
+  .ctrl-btn:active{transform:scale(0.9);}
+  .ctrl-btn.skip svg{width:22px;height:22px;}
+  .ctrl-btn.play-pause{
+    width:58px;height:58px;
+    background:var(--gold);
+    border-radius:50%;
+    color:#1a1206;
+  }
+  .ctrl-btn.play-pause:hover{color:#1a1206;filter:brightness(1.08);}
+  .ctrl-btn.play-pause svg{width:24px;height:24px;}
+
+  .secondary-controls{
+    display:flex;
+    justify-content:center;
+    gap:18px;
+    margin-top:16px;
+  }
+  .mini-toggle{
+    background:none;border:none;
+    color:var(--muted);
+    font-size:16px;
+    cursor:pointer;
+    padding:6px;
+  }
+  .mini-toggle.active{color:var(--gold);}
+
+  /* ───────── Playlist ───────── */
+  .playlist-card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    overflow:hidden;
+  }
+  .playlist-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:16px 20px;
+    border-bottom:1px solid var(--line);
+  }
+  .playlist-header .pt{
+    font-family:'Bebas Neue','Arial Narrow',sans-serif;
+    font-size:16px;
+    letter-spacing:1.5px;
+    color:var(--text);
+  }
+  .playlist-header .pc{
+    font-size:12px;
+    color:var(--text-soft);
+  }
+  .track-row{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:13px 20px;
+    cursor:pointer;
+    border-bottom:1px solid var(--line);
+    transition:background 0.12s;
+  }
+  .track-row:last-child{border-bottom:none;}
+  .track-row:hover{background:var(--panel2);}
+  .track-row.playing{background:rgba(232,184,75,0.08);}
+  .track-num{
+    width:22px;
+    font-size:13px;
+    color:var(--text-soft);
+    text-align:center;
+    flex-shrink:0;
+  }
+  .track-row.playing .track-num{color:var(--gold);}
+  .track-info{flex:1;min-width:0;}
+  .track-info .tn{
+    font-size:14px;
+    font-weight:600;
+    color:var(--text);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .track-info .ta{
+    font-size:12px;
+    color:var(--text-soft);
+  }
+  .track-dur{
+    font-size:12px;
+    color:var(--text-soft);
+    flex-shrink:0;
+  }
+  .eq-icon{
+    width:14px;height:14px;
+    flex-shrink:0;
+    color:var(--gold);
+  }
+
+  .footer-note{
+    text-align:center;
+    color:var(--muted);
+    font-size:11px;
+    line-height:1.6;
+    margin-top:24px;
+    padding:0 12px;
+  }
+
+  audio{display:none;}
+
+  /* ───────── Admin ───────── */
+  .admin-trigger{
+    position:fixed;
+    bottom:14px;
+    right:14px;
+    width:34px;height:34px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:50%;
+    color:var(--muted);
+    font-size:14px;
+    cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    z-index:50;
+    opacity:0.5;
+  }
+  .admin-trigger:hover{opacity:1;color:var(--gold);}
+
+  .admin-overlay{
+    position:fixed;
+    top:0;left:0;right:0;bottom:0;
+    background:rgba(5,7,14,0.92);
+    z-index:100;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    overflow-y:auto;
+    padding:40px 20px;
+  }
+  .admin-panel{
+    width:100%;
+    max-width:920px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:28px;
+  }
+  .admin-pin-box{
+    max-width:340px;
+    margin:0 auto;
+    text-align:center;
+  }
+  .admin-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:24px;
+  }
+  .admin-header h2{
+    font-family:'Bebas Neue','Arial Narrow',sans-serif;
+    font-size:24px;
+    letter-spacing:1.5px;
+    color:var(--text);
+  }
+  .admin-close{
+    background:none;border:1px solid var(--line);
+    color:var(--text-soft);
+    width:32px;height:32px;border-radius:8px;
+    cursor:pointer;font-size:16px;
+  }
+  .admin-close:hover{color:var(--text);border-color:var(--gold-dim);}
+
+  .stat-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));
+    gap:12px;
+    margin-bottom:24px;
+  }
+  .stat-box{
+    background:var(--bg2);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:16px;
+  }
+  .stat-box .sv{
+    font-family:'Bebas Neue','Arial Narrow',sans-serif;
+    font-size:28px;
+    color:var(--gold);
+  }
+  .stat-box .sl{
+    font-size:11px;
+    color:var(--text-soft);
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    margin-top:2px;
+  }
+
+  .admin-table-wrap{
+    background:var(--bg2);
+    border:1px solid var(--line);
+    border-radius:10px;
+    overflow:hidden;
+  }
+  table.admin-table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13px;
+  }
+  table.admin-table th{
+    text-align:left;
+    padding:10px 14px;
+    background:var(--panel2);
+    color:var(--text-soft);
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    border-bottom:1px solid var(--line);
+  }
+  table.admin-table td{
+    padding:11px 14px;
+    color:var(--text);
+    border-bottom:1px solid var(--line);
+  }
+  table.admin-table tr:last-child td{border-bottom:none;}
+  table.admin-table tr.clickable{cursor:pointer;}
+  table.admin-table tr.clickable:hover{background:var(--panel2);}
+  .badge{
+    display:inline-block;
+    padding:2px 8px;
+    border-radius:5px;
+    font-size:11px;
+    font-weight:600;
+  }
+  .badge.live{background:rgba(95,217,138,0.15);color:var(--success);}
+
+  .admin-back-btn{
+    background:none;border:1px solid var(--line);
+    color:var(--text-soft);
+    padding:7px 14px;border-radius:7px;
+    font-size:12px;cursor:pointer;margin-bottom:16px;
+  }
+  .admin-back-btn:hover{color:var(--text);border-color:var(--gold-dim);}
+
+  .admin-loading, .admin-empty{
+    text-align:center;
+    color:var(--text-soft);
+    padding:40px 0;
+    font-size:13px;
+  }
+
+  @media (max-width:520px){
+    .lock-card{padding:30px 22px;}
+    .art-wrap{width:160px;height:160px;}
+    .controls-row{gap:16px;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ LOCK SCREEN ═══════════ -->
+<div class="screen" id="lockScreen">
+  <div class="lock-card">
+    <div class="lock-brand">
+      <div class="mark">LAMB MUSIC WORKS</div>
+      <h1>SONGDROP</h1>
+    </div>
+    <div class="lock-sub">Enter your partner details to access your in-store catalog.</div>
+
+    <div class="field">
+      <label for="inputCode">Partner Code</label>
+      <input type="text" id="inputCode" placeholder="e.g. TM7291" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="inputName">Full Name</label>
+      <input type="text" id="inputName" placeholder="Your full name" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="inputEmail">Email</label>
+      <input type="email" id="inputEmail" placeholder="you@example.com" autocomplete="off">
+    </div>
+
+    <button class="unlock-btn" id="unlockBtn" onclick="attemptUnlock()">Unlock Catalog</button>
+    <div class="lock-error" id="lockError"></div>
+
+    <div class="lock-footer">
+      Licensed for in-store ambient play only.<br>
+      Reproduction, resale, or distribution outside SongDrop is prohibited.
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ PLAYER SCREEN ═══════════ -->
+<div class="screen hidden" id="playerScreen">
+  <div class="player-wrap">
+    <div class="topbar">
+      <div class="greet">Welcome, <strong id="greetName">—</strong></div>
+      <button class="lock-out-btn" onclick="lockOut()">Lock</button>
+    </div>
+
+    <div class="now-playing-card">
+      <div class="art-wrap"><div class="note-icon">♪</div></div>
+      <div class="track-title" id="npTitle">Select a track</div>
+      <div class="track-artist" id="npArtist">Lamb Music Works</div>
+
+      <div class="progress-row">
+        <span class="time-label" id="curTime">0:00</span>
+        <div class="progress-track" id="progressTrack" onclick="seek(event)">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <span class="time-label" id="durTime">0:00</span>
+      </div>
+
+      <div class="controls-row">
+        <button class="ctrl-btn skip" onclick="prevTrack()" title="Previous">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+        </button>
+        <button class="ctrl-btn play-pause" id="playPauseBtn" onclick="togglePlay()" title="Play/Pause">
+          <svg id="playIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+        <button class="ctrl-btn skip" onclick="nextTrack()" title="Next">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 18h2V6h-2zM6 18l8.5-6L6 6z"/></svg>
+        </button>
+      </div>
+
+      <div class="secondary-controls">
+        <button class="mini-toggle" id="shuffleBtn" onclick="toggleShuffle()" title="Shuffle">⇄ Shuffle</button>
+        <button class="mini-toggle" id="repeatBtn" onclick="toggleRepeat()" title="Repeat">↺ Repeat</button>
+      </div>
+    </div>
+
+    <div class="playlist-card">
+      <div class="playlist-header">
+        <div class="pt">CATALOG</div>
+        <div class="pc" id="trackCount">0 tracks</div>
+      </div>
+      <div id="playlistTracks"></div>
+    </div>
+
+    <div class="footer-note">
+      Licensed for in-store ambient play only. Reproduction, resale, or distribution outside SongDrop is prohibited.<br>
+      © Lamb Music Works · BMI
+    </div>
+  </div>
+
+  <audio id="audioEl" preload="metadata"></audio>
+</div>
+
+<!-- ═══════════ ADMIN ═══════════ -->
+<button class="admin-trigger" onclick="openAdmin()" title="Admin">⚙</button>
+
+<div class="admin-overlay hidden" id="adminOverlay">
+  <div class="admin-panel">
+
+    <div id="adminPinView">
+      <div class="admin-header">
+        <h2>ADMIN ACCESS</h2>
+        <button class="admin-close" onclick="closeAdmin()">✕</button>
+      </div>
+      <div class="admin-pin-box">
+        <div class="field">
+          <label for="adminPinInput">Admin PIN</label>
+          <input type="password" id="adminPinInput" placeholder="••••" autocomplete="off">
+        </div>
+        <button class="unlock-btn" onclick="checkAdminPin()">Enter Dashboard</button>
+        <div class="lock-error" id="adminPinError"></div>
+      </div>
+    </div>
+
+    <div id="adminDashView" class="hidden">
+      <div class="admin-header">
+        <h2>SONGDROP DASHBOARD</h2>
+        <button class="admin-close" onclick="closeAdmin()">✕</button>
+      </div>
+
+      <div id="adminOverviewPanel">
+        <div class="stat-grid" id="adminStatGrid"></div>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr><th>Partner</th><th>Code</th><th>Location</th><th>Sessions</th><th>Last Active</th><th>Status</th></tr>
+            </thead>
+            <tbody id="adminPartnerRows"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="adminDetailPanel" class="hidden">
+        <button class="admin-back-btn" onclick="showAdminOverview()">← Back to all partners</button>
+        <div class="stat-grid" id="adminDetailStats"></div>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr><th>Session Start</th><th>Device</th><th>Events</th></tr>
+            </thead>
+            <tbody id="adminSessionRows"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+// ════════════════════════════════════════════════════════════
+// CONFIG
+// ════════════════════════════════════════════════════════════
+const SUPABASE_URL = 'https://ptgatsxuexmudteqzxmc.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_alnqpueV11-3S6RssaMYyg_7aeALCC4';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const ADMIN_PIN = 'Warren3673$';
+
+// Placeholder catalog — swap audio URLs with real GitHub-hosted raw links later
+const CATALOG = [
+  { id:'t1', title:'You Are Enough', artist:'Zairey', src:'', duration:180 },
+  { id:'t2', title:'Love the Art', artist:'Zairey', src:'', duration:195 },
+  { id:'t3', title:'Blues of a Digital Age', artist:'Zairey', src:'', duration:210 },
+  { id:'t4', title:'Birth of Hip-Hop', artist:'Zairey', src:'', duration:188 },
+  { id:'t5', title:'I Like Everything About Black Women', artist:'Zairey', src:'', duration:202 },
+  { id:'t6', title:'Jam Session', artist:'Zairey', src:'', duration:175 },
+  { id:'t7', title:'Be My Peace', artist:'Zairey', src:'', duration:230 },
+  { id:'t8', title:'Big Body Benz', artist:'Zairey', src:'', duration:165 },
+];
+
+// ════════════════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════════════════
+let currentPartner = null;   // { code, name, email }
+let currentSessionId = null;
+let currentTrackIndex = -1;
+let isPlaying = false;
+let shuffleOn = false;
+let repeatOn = false;
+
+const audioEl = document.getElementById('audioEl');
+
+// ════════════════════════════════════════════════════════════
+// LOCK SCREEN / AUTH
+// ════════════════════════════════════════════════════════════
+function fmtTime(sec){
+  if(!sec || isNaN(sec)) return '0:00';
+  const m = Math.floor(sec/60);
+  const s = Math.floor(sec%60).toString().padStart(2,'0');
+  return `${m}:${s}`;
+}
+
+function showLockError(msg){
+  document.getElementById('lockError').textContent = msg;
+}
+
+async function attemptUnlock(){
+  const code = document.getElementById('inputCode').value.trim().toUpperCase();
+  const name = document.getElementById('inputName').value.trim();
+  const email = document.getElementById('inputEmail').value.trim();
+  const btn = document.getElementById('unlockBtn');
+
+  showLockError('');
+  [['inputCode',code],['inputName',name],['inputEmail',email]].forEach(([id,val])=>{
+    document.getElementById(id).classList.toggle('invalid', !val);
+  });
+
+  if(!code || !name || !email){
+    showLockError('Please fill in all fields.');
+    return;
+  }
+  if(!email.includes('@') || !email.includes('.')){
+    document.getElementById('inputEmail').classList.add('invalid');
+    showLockError('Please enter a valid email address.');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Checking…';
+
+  try{
+    const { data: partner, error } = await sb
+      .from('songdrop_partners')
+      .select('*')
+      .eq('code', code)
+      .maybeSingle();
+
+    if(error) throw error;
+
+    if(!partner){
+      showLockError('Partner code not recognized. Contact Lamb Music Works if you believe this is an error.');
+      btn.disabled = false;
+      btn.textContent = 'Unlock Catalog';
+      return;
+    }
+
+    // Save name/email on first use only (don't overwrite once set)
+    const updates = {};
+    if(!partner.name) updates.name = name;
+    if(!partner.email) updates.email = email;
+    updates.last_active = new Date().toISOString();
+
+    await sb.from('songdrop_partners').update(updates).eq('code', code);
+
+    currentPartner = { code, name: partner.name || name, email: partner.email || email };
+
+    // Create a session row
+    const { data: session, error: sessErr } = await sb
+      .from('songdrop_sessions')
+      .insert({
+        partner_code: code,
+        device_type: /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
+        user_agent: navigator.userAgent
+      })
+      .select()
+      .single();
+
+    if(sessErr) throw sessErr;
+    currentSessionId = session.id;
+
+    enterPlayer();
+
+  }catch(err){
+    console.error(err);
+    showLockError('Something went wrong connecting to the partner system. Please try again.');
+    btn.disabled = false;
+    btn.textContent = 'Unlock Catalog';
+  }
+}
+
+function enterPlayer(){
+  document.getElementById('lockScreen').classList.add('hidden');
+  document.getElementById('playerScreen').classList.remove('hidden');
+  document.getElementById('greetName').textContent = currentPartner.name;
+  renderPlaylist();
+  document.getElementById('trackCount').textContent = `${CATALOG.length} tracks`;
+}
+
+async function lockOut(){
+  if(currentSessionId){
+    await sb.from('songdrop_sessions')
+      .update({ ended_at: new Date().toISOString() })
+      .eq('id', currentSessionId);
+  }
+  audioEl.pause();
+  isPlaying = false;
+  currentPartner = null;
+  currentSessionId = null;
+  currentTrackIndex = -1;
+  document.getElementById('playerScreen').classList.add('hidden');
+  document.getElementById('lockScreen').classList.remove('hidden');
+  ['inputCode','inputName','inputEmail'].forEach(id=>{
+    document.getElementById(id).value='';
+    document.getElementById(id).classList.remove('invalid');
+  });
+  showLockError('');
+}
+
+// ════════════════════════════════════════════════════════════
+// EVENT LOGGING
+// ════════════════════════════════════════════════════════════
+async function logEvent(eventType, track){
+  if(!currentPartner) return;
+  try{
+    await sb.from('songdrop_events').insert({
+      session_id: currentSessionId,
+      partner_code: currentPartner.code,
+      event_type: eventType,
+      track_id: track ? track.id : null,
+      track_title: track ? track.title : null,
+      position_seconds: audioEl.currentTime || 0
+    });
+  }catch(err){
+    console.error('Event log failed (non-blocking):', err);
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+// PLAYER
+// ════════════════════════════════════════════════════════════
+function renderPlaylist(){
+  const wrap = document.getElementById('playlistTracks');
+  wrap.innerHTML = CATALOG.map((t,i)=>`
+    <div class="track-row ${i===currentTrackIndex?'playing':''}" onclick="playTrack(${i})">
+      <div class="track-num">${i===currentTrackIndex && isPlaying ? '<svg class=\"eq-icon\" viewBox=\"0 0 24 24\" fill=\"currentColor\"><rect x=\"4\" y=\"10\" width=\"3\" height=\"8\"/><rect x=\"10\" y=\"6\" width=\"3\" height=\"12\"/><rect x=\"16\" y=\"3\" width=\"3\" height=\"15\"/></svg>' : i+1}</div>
+      <div class="track-info">
+        <div class="tn">${t.title}</div>
+        <div class="ta">${t.artist}</div>
+      </div>
+      <div class="track-dur">${fmtTime(t.duration)}</div>
+    </div>
+  `).join('');
+}
+
+function playTrack(index){
+  if(index < 0 || index >= CATALOG.length) return;
+  const prevTrack = currentTrackIndex >= 0 ? CATALOG[currentTrackIndex] : null;
+  currentTrackIndex = index;
+  const track = CATALOG[index];
+
+  document.getElementById('npTitle').textContent = track.title;
+  document.getElementById('npArtist').textContent = track.artist;
+
+  if(track.src){
+    audioEl.src = track.src;
+    audioEl.play().then(()=>{
+      isPlaying = true;
+      updatePlayIcon();
+    }).catch(err=>console.error('Playback error:', err));
+  }else{
+    // Placeholder — no real audio file yet
+    isPlaying = false;
+    updatePlayIcon();
+    document.getElementById('npTitle').textContent = track.title + ' (audio coming soon)';
+  }
+
+  renderPlaylist();
+  logEvent('play', track);
+}
+
+function togglePlay(){
+  if(currentTrackIndex === -1){
+    if(CATALOG.length) playTrack(0);
+    return;
+  }
+  const track = CATALOG[currentTrackIndex];
+  if(!track.src) return;
+
+  if(isPlaying){
+    audioEl.pause();
+    isPlaying = false;
+    logEvent('pause', track);
+  }else{
+    audioEl.play();
+    isPlaying = true;
+    logEvent('play', track);
+  }
+  updatePlayIcon();
+}
+
+function updatePlayIcon(){
+  const icon = document.getElementById('playIcon');
+  icon.innerHTML = isPlaying
+    ? '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>'
+    : '<path d="M8 5v14l11-7z"/>';
+  renderPlaylist();
+}
+
+function nextTrack(){
+  if(!CATALOG.length) return;
+  let next;
+  if(shuffleOn){
+    next = Math.floor(Math.random()*CATALOG.length);
+  }else{
+    next = (currentTrackIndex + 1) % CATALOG.length;
+  }
+  if(currentTrackIndex >= 0) logEvent('skip', CATALOG[currentTrackIndex]);
+  playTrack(next);
+}
+
+function prevTrack(){
+  if(!CATALOG.length) return;
+  const prev = currentTrackIndex <= 0 ? CATALOG.length - 1 : currentTrackIndex - 1;
+  playTrack(prev);
+}
+
+function toggleShuffle(){
+  shuffleOn = !shuffleOn;
+  document.getElementById('shuffleBtn').classList.toggle('active', shuffleOn);
+}
+function toggleRepeat(){
+  repeatOn = !repeatOn;
+  document.getElementById('repeatBtn').classList.toggle('active', repeatOn);
+}
+
+function seek(e){
+  if(!audioEl.duration) return;
+  const rect = e.currentTarget.getBoundingClientRect();
+  const pct = (e.clientX - rect.left) / rect.width;
+  audioEl.currentTime = pct * audioEl.duration;
+}
+
+audioEl.addEventListener('timeupdate', ()=>{
+  if(!audioEl.duration) return;
+  const pct = (audioEl.currentTime / audioEl.duration) * 100;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('curTime').textContent = fmtTime(audioEl.currentTime);
+  document.getElementById('durTime').textContent = fmtTime(audioEl.duration);
+});
+
+audioEl.addEventListener('ended', ()=>{
+  const track = CATALOG[currentTrackIndex];
+  logEvent('track_complete', track);
+  if(repeatOn){
+    playTrack(currentTrackIndex);
+  }else{
+    nextTrack();
+  }
+});
+
+// ════════════════════════════════════════════════════════════
+// BASIC DETERRENCE (not real DRM — see project notes)
+// ════════════════════════════════════════════════════════════
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('dragstart', e => e.preventDefault());
+document.addEventListener('keydown', e => {
+  const blocked = (
+    e.key === 'F12' ||
+    (e.ctrlKey && e.shiftKey && ['I','J','C'].includes(e.key.toUpperCase())) ||
+    (e.ctrlKey && ['S','U'].includes(e.key.toUpperCase()))
+  );
+  if (blocked) e.preventDefault();
+});
+
+// ════════════════════════════════════════════════════════════
+// ADMIN DASHBOARD
+// ════════════════════════════════════════════════════════════
+function openAdmin(){
+  document.getElementById('adminOverlay').classList.remove('hidden');
+  document.getElementById('adminPinView').classList.remove('hidden');
+  document.getElementById('adminDashView').classList.add('hidden');
+  document.getElementById('adminPinInput').value='';
+  document.getElementById('adminPinError').textContent='';
+}
+function closeAdmin(){
+  document.getElementById('adminOverlay').classList.add('hidden');
+}
+function checkAdminPin(){
+  const val = document.getElementById('adminPinInput').value;
+  if(val === ADMIN_PIN){
+    document.getElementById('adminPinView').classList.add('hidden');
+    document.getElementById('adminDashView').classList.remove('hidden');
+    loadAdminOverview();
+  }else{
+    document.getElementById('adminPinError').textContent = 'Incorrect PIN.';
+  }
+}
+
+async function loadAdminOverview(){
+  const statGrid = document.getElementById('adminStatGrid');
+  const rows = document.getElementById('adminPartnerRows');
+  statGrid.innerHTML = `<div class="admin-loading">Loading…</div>`;
+  rows.innerHTML = '';
+
+  try{
+    const [{ data: partners }, { data: sessions }, { data: events }] = await Promise.all([
+      sb.from('songdrop_partners').select('*'),
+      sb.from('songdrop_sessions').select('*'),
+      sb.from('songdrop_events').select('*')
+    ]);
+
+    const totalPartners = partners?.length || 0;
+    const totalSessions = sessions?.length || 0;
+    const totalPlays = events?.filter(e=>e.event_type==='play').length || 0;
+    const activeNow = sessions?.filter(s=>!s.ended_at).length || 0;
+
+    statGrid.innerHTML = `
+      <div class="stat-box"><div class="sv">${totalPartners}</div><div class="sl">Partners</div></div>
+      <div class="stat-box"><div class="sv">${totalSessions}</div><div class="sl">Total Sessions</div></div>
+      <div class="stat-box"><div class="sv">${totalPlays}</div><div class="sl">Total Plays</div></div>
+      <div class="stat-box"><div class="sv">${activeNow}</div><div class="sl">Active Now</div></div>
+    `;
+
+    if(!partners || !partners.length){
+      rows.innerHTML = `<tr><td colspan="6"><div class="admin-empty">No partners yet.</div></td></tr>`;
+      return;
+    }
+
+    rows.innerHTML = partners.map(p=>{
+      const pSessions = sessions?.filter(s=>s.partner_code===p.code) || [];
+      const isLive = pSessions.some(s=>!s.ended_at);
+      const lastActive = p.last_active ? new Date(p.last_active).toLocaleString() : '—';
+      return `
+        <tr class="clickable" onclick="showAdminDetail('${p.code}')">
+          <td>${p.name || '—'}</td>
+          <td>${p.code}</td>
+          <td>${p.location || '—'}</td>
+          <td>${pSessions.length}</td>
+          <td>${lastActive}</td>
+          <td>${isLive ? '<span class="badge live">● Live</span>' : '—'}</td>
+        </tr>
+      `;
+    }).join('');
+
+  }catch(err){
+    console.error(err);
+    statGrid.innerHTML = `<div class="admin-empty">Couldn't load dashboard data.</div>`;
+  }
+}
+
+function showAdminOverview(){
+  document.getElementById('adminOverviewPanel').classList.remove('hidden');
+  document.getElementById('adminDetailPanel').classList.add('hidden');
+}
+
+async function showAdminDetail(code){
+  document.getElementById('adminOverviewPanel').classList.add('hidden');
+  document.getElementById('adminDetailPanel').classList.remove('hidden');
+  const stats = document.getElementById('adminDetailStats');
+  const rows = document.getElementById('adminSessionRows');
+  stats.innerHTML = `<div class="admin-loading">Loading…</div>`;
+  rows.innerHTML = '';
+
+  try{
+    const [{ data: sessions }, { data: events }] = await Promise.all([
+      sb.from('songdrop_sessions').select('*').eq('partner_code', code).order('started_at', { ascending:false }),
+      sb.from('songdrop_events').select('*').eq('partner_code', code)
+    ]);
+
+    const totalPlays = events?.filter(e=>e.event_type==='play').length || 0;
+    const totalSkips = events?.filter(e=>e.event_type==='skip').length || 0;
+    const completes = events?.filter(e=>e.event_type==='track_complete').length || 0;
+
+    // Most played track
+    const playCounts = {};
+    events?.filter(e=>e.event_type==='play').forEach(e=>{
+      playCounts[e.track_title] = (playCounts[e.track_title]||0)+1;
+    });
+    const topTrack = Object.entries(playCounts).sort((a,b)=>b[1]-a[1])[0];
+
+    stats.innerHTML = `
+      <div class="stat-box"><div class="sv">${sessions?.length||0}</div><div class="sl">Sessions</div></div>
+      <div class="stat-box"><div class="sv">${totalPlays}</div><div class="sl">Plays</div></div>
+      <div class="stat-box"><div class="sv">${totalSkips}</div><div class="sl">Skips</div></div>
+      <div class="stat-box"><div class="sv">${completes}</div><div class="sl">Completed</div></div>
+    `;
+
+    if(!sessions || !sessions.length){
+      rows.innerHTML = `<tr><td colspan="3"><div class="admin-empty">No sessions yet for this partner.</div></td></tr>`;
+      return;
+    }
+
+    rows.innerHTML = sessions.map(s=>{
+      const sessEvents = events?.filter(e=>e.session_id===s.id) || [];
+      return `
+        <tr>
+          <td>${new Date(s.started_at).toLocaleString()}</td>
+          <td>${s.device_type || '—'}</td>
+          <td>${sessEvents.length} events</td>
+        </tr>
+      `;
+    }).join('');
+
+  }catch(err){
+    console.error(err);
+    stats.innerHTML = `<div class="admin-empty">Couldn't load partner detail.</div>`;
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+// INIT — supports ?code=XXXX prefill from QR/card links
+// ════════════════════════════════════════════════════════════
+(function init(){
+  const params = new URLSearchParams(window.location.search);
+  const urlCode = params.get('code');
+  if(urlCode){
+    document.getElementById('inputCode').value = urlCode.toUpperCase();
+  }
+})();
+</script>
+</body>
+</html>
